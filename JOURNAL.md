@@ -87,3 +87,33 @@
 - Début du compendium SRD (`public/data/*.json` + types dans
   `src/data/compendium.ts`).
 - Fiche de personnage (calculs automatiques) et créateur pas-à-pas.
+
+## 2026-08-06 — Schémas TS du compendium + premier import SRD
+
+**Fait**
+- `src/data/types.ts` : `AbilityKey`, `SaveProgression`, `BabProgression`,
+  `RaceDefinition`, `ClassLevelEntry`, `ClassDefinition`.
+- `public/data/races-srd.json` : 4 races SRD (humain, elfe, nain, drow).
+- `public/data/classes-srd.json` : 2 classes de base SRD (guerrier,
+  magicien).
+- `src/data/loadCompendium.ts` : `loadRaces()` / `loadClasses()` — `fetch`
+  vers `public/data/*.json` avec `import.meta.env.BASE_URL` pour rester
+  compatible avec `base: '/ElfSombre/'`.
+- Tests Vitest (`loadCompendium.test.ts`) : `fetch` mocké via
+  `vi.stubGlobal` renvoyant les fixtures JSON importées statiquement ;
+  valeurs verrouillées (`elf.abilityAdjustments.dex`,
+  `drow.levelAdjustment`, `fighter.babProgression`,
+  `wizard.spellcaster.ability`, `wizard.levelFeatures[level:1]`).
+
+**Décisions prises**
+- `loadCompendium.ts` utilise `fetch` (et non un import statique) car
+  `public/data/` n'est pas précaché par le graphe de modules Vite — c'est
+  le service worker qui le précache pour l'usage hors-ligne à l'exécution.
+- Le mock de `fetch` dans les tests importe les fixtures JSON directement
+  (`resolveJsonModule`) plutôt que de lire le disque via `node:fs`, pour
+  éviter d'ajouter les types Node à `tsconfig.app.json`.
+
+**Prochaine étape**
+- Étoffer le compendium (dons, sorts, objets) et faire converger
+  `src/data/compendium.ts` avec ces nouveaux types spécifiques.
+- Fiche de personnage (calculs automatiques) et créateur pas-à-pas.
