@@ -1,0 +1,24 @@
+[
+  {"id":"fighter","name":"Guerrier","hitDie":10,"babProgression":"full",
+   "saveProgressions":{"fort":"good","ref":"poor","will":"poor"},
+   "skillPointsBase":2,
+   "classSkills":["climb","craft","handleAnimal","intimidate","jump","ride","swim"],
+   "levelFeatures":[
+     {"level":1,"features":["bonusFeat"]},{"level":2,"features":["bonusFeat"]},
+     {"level":4,"features":["bonusFeat"]},{"level":6,"features":["bonusFeat"]},
+     {"level":8,"features":["bonusFeat"]},{"level":10,"features":["bonusFeat"]},
+     {"level":12,"features":["bonusFeat"]},{"level":14,"features":["bonusFeat"]},
+     {"level":16,"features":["bonusFeat"]},{"level":18,"features":["bonusFeat"]},
+     {"level":20,"features":["bonusFeat"]}],
+   "source":"srd"},
+  {"id":"wizard","name":"Magicien","hitDie":4,"babProgression":"half",
+   "saveProgressions":{"fort":"poor","ref":"poor","will":"good"},
+   "skillPointsBase":2,
+   "classSkills":["concentration","craft","decipherScript","knowledgeAll","profession","spellcraft"],
+   "levelFeatures":[
+     {"level":1,"features":["scribeScroll","summonFamiliar"]},
+     {"level":5,"features":["bonusFeat"]},{"level":10,"features":["bonusFeat"]},
+     {"level":15,"features":["bonusFeat"]},{"level":20,"features":["bonusFeat"]}],
+   "spellcaster":{"type":"prepared","ability":"int"},
+   "source":"srd"}
+]
