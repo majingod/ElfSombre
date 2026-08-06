@@ -1,0 +1,25 @@
+{
+  "id": "example-strict",
+  "name": "Exemple — contraintes strictes",
+  "schemaVersion": 1,
+  "startingLevel": 6,
+  "abilityGeneration": {
+    "method": "constrained-assign",
+    "modifierSum": { "op": "eq", "value": 8 },
+    "parity": { "odd": 3, "even": 3 },
+    "min": 6,
+    "max": 18,
+    "evaluatedBeforeRacial": true
+  },
+  "startingWealth": {
+    "total": 13000,
+    "itemCaps": [
+      { "rank": 1, "pct": 0.35, "gp": 4550 },
+      { "rank": 2, "pct": 0.25, "gp": 3250 },
+      { "rank": 3, "pct": 0.15, "gp": 1950 },
+      { "rank": "rest", "pct": 0.10, "gp": 1300, "inclusive": false }
+    ]
+  },
+  "allowedSources": ["srd"],
+  "customEntities": {}
+}

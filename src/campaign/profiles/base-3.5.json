@@ -1,0 +1,15 @@
+{
+  "id": "base-3.5",
+  "name": "D&D 3.5 (SRD) — sans surcharge de campagne",
+  "schemaVersion": 1,
+  "startingLevel": 1,
+  "abilityGeneration": {
+    "method": "freeform",
+    "min": 3,
+    "max": 18,
+    "evaluatedBeforeRacial": true
+  },
+  "startingWealth": null,
+  "allowedSources": ["srd"],
+  "customEntities": {}
+}

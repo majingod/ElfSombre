@@ -14,11 +14,3 @@ export type ValidationIssue = {
 export type AbilityName = 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'
 
 export type AbilityScores = Record<AbilityName, number>
-
-export type AbilityScoreGenerationProfile = {
-  campaignId?: string
-  min?: number
-  max?: number
-  modifierSum?: { op: 'eq' | 'lte'; value: number }
-  parity?: { odd: number; even: number }
-}
