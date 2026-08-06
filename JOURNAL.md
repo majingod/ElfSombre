@@ -38,3 +38,52 @@
 - Début du compendium SRD (`public/data/*.json` + types dans
   `src/data/compendium.ts`).
 - Fiche de personnage (calculs automatiques) et créateur pas-à-pas.
+
+## 2026-08-06 — Profils de campagne + moteur de caractéristiques complet
+
+**Fait**
+- `src/campaign/types.ts` : type `CampaignProfile` (id, name, schemaVersion,
+  startingLevel, `abilityGeneration` {method, modifierSum?, parity?, min,
+  max, evaluatedBeforeRacial}, startingWealth, allowedSources,
+  customEntities). Réutilise `ValidationIssue` de `src/engine/types.ts` sans
+  le dupliquer.
+- `src/campaign/profiles/base-3.5.json` : profil sans surcharge
+  (`method: "freeform"`, min 3, max 18, `startingWealth: null`).
+- `src/campaign/profiles/example-strict.json` : fixture de **test**
+  générique à contraintes strictes (somme des mods = 8, parité 3/3, min 6
+  max 18, niveau de départ 6, richesse 13000 po avec 4 plafonds). Elle ne
+  représente aucune campagne réelle — pas de nom, maison ou lore de table.
+- `src/campaign/loadProfile.ts` : `loadCampaignProfile(id)` — `null` ou
+  `"base-3.5"` renvoient le profil de base ; un id inconnu lève une erreur.
+- `src/engine/abilities.ts` : `validateAbilityGeneration(scores, profile)`
+  consomme désormais un `CampaignProfile` complet au lieu de paramètres
+  séparés ; `abilityModifier` inchangé.
+- `src/db/schema.ts` (remplace `src/db/db.ts`) : tables Dexie `campaigns`
+  (id, name) et `characters` (id, name, campaignId nullable, updatedAt),
+  `schemaVersion = 1`, avec commentaire sur la convention de migration
+  attendue pour v2.
+- Tests Vitest pour `loadCampaignProfile`, `validateAbilityGeneration` sur
+  les deux profils, et Dexie (personnage avec `campaignId` null puis avec
+  `"example-strict"`). Ajout de `fake-indexeddb` en devDependency pour que
+  Dexie fonctionne sous jsdom en test.
+
+**Décisions prises**
+- La tâche demandait initialement un profil `xilthren-veyl.json` recopiant
+  un document de campagne (`campagne-xilthren-veyl.md`) absent du repo et
+  de tout l'historique git. Conformément à l'interdit n°2/3 de CLAUDE.md
+  (jamais inventer de contenu de campagne, jamais le committer ici), ce
+  profil n'a pas été créé ; `example-strict.json` le remplace comme fixture
+  de test neutre portant les mêmes contraintes numériques.
+- `layer` dans `validateAbilityGeneration` vaut `'core'` si
+  `profile.id === 'base-3.5'`, `'campaign'` sinon (avec `campaignId =
+  profile.id`) — le moteur reste agnostique de la campagne, c'est l'id du
+  profil chargé qui détermine la couche responsable du refus.
+- `startingWealth` est `null` dans le profil de base : ceci signifie
+  « aucune surcharge », le moteur devra retomber sur la table SRD standard
+  d'or de départ par classe (à implémenter) plutôt que sur un total fixe
+  arbitraire.
+
+**Prochaine étape**
+- Début du compendium SRD (`public/data/*.json` + types dans
+  `src/data/compendium.ts`).
+- Fiche de personnage (calculs automatiques) et créateur pas-à-pas.

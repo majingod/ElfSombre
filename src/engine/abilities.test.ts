@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { loadCampaignProfile } from '../campaign/loadProfile'
 import { abilityModifier, validateAbilityGeneration } from './abilities'
-import type { AbilityScoreGenerationProfile, AbilityScores } from './types'
+import type { AbilityScores } from './types'
 
 describe('abilityModifier', () => {
   it.each([
@@ -14,12 +15,8 @@ describe('abilityModifier', () => {
 })
 
 describe('validateAbilityGeneration', () => {
-  const profile: AbilityScoreGenerationProfile = {
-    min: 3,
-    max: 18,
-    modifierSum: { op: 'eq', value: 8 },
-    parity: { odd: 3, even: 3 },
-  }
+  const base35 = loadCampaignProfile('base-3.5')
+  const exampleStrict = loadCampaignProfile('example-strict')
 
   const validScores: AbilityScores = {
     str: 18,
@@ -30,19 +27,23 @@ describe('validateAbilityGeneration', () => {
     cha: 7,
   }
 
-  it('accepte le jeu 18/16/14/13/11/7 (somme des mods = 8, parité 3/3)', () => {
-    expect(validateAbilityGeneration(validScores, profile)).toEqual([])
+  it('accepte le jeu 18/16/14/13/11/7 pour example-strict (somme des mods = 8, parité 3/3)', () => {
+    expect(validateAbilityGeneration(validScores, exampleStrict)).toEqual([])
   })
 
-  it('rejette une somme de modificateurs incorrecte', () => {
+  it('accepte le même jeu pour base-3.5 (aucune contrainte de somme/parité)', () => {
+    expect(validateAbilityGeneration(validScores, base35)).toEqual([])
+  })
+
+  it('rejette une somme de modificateurs incorrecte (example-strict)', () => {
     const scores: AbilityScores = { ...validScores, cha: 10 }
-    const issues = validateAbilityGeneration(scores, profile)
+    const issues = validateAbilityGeneration(scores, exampleStrict)
     expect(issues).toContainEqual(
-      expect.objectContaining({ code: 'ABILITY_MOD_SUM', layer: 'core' }),
+      expect.objectContaining({ code: 'ABILITY_MOD_SUM', layer: 'campaign' }),
     )
   })
 
-  it('rejette une répartition pair/impair incorrecte', () => {
+  it('rejette une répartition pair/impair incorrecte (example-strict)', () => {
     const scores: AbilityScores = {
       str: 18,
       dex: 16,
@@ -51,46 +52,59 @@ describe('validateAbilityGeneration', () => {
       wis: 10,
       cha: 8,
     }
-    const issues = validateAbilityGeneration(scores, profile)
+    const issues = validateAbilityGeneration(scores, exampleStrict)
     expect(issues).toContainEqual(
-      expect.objectContaining({ code: 'ABILITY_PARITY', layer: 'core' }),
+      expect.objectContaining({ code: 'ABILITY_PARITY', layer: 'campaign' }),
     )
   })
 
   it('rejette un score sous le minimum', () => {
     const scores: AbilityScores = { ...validScores, cha: 2 }
-    const issues = validateAbilityGeneration(scores, profile)
+    const issues = validateAbilityGeneration(scores, base35)
     expect(issues).toContainEqual(
       expect.objectContaining({
         code: 'ABILITY_SCORE_BELOW_MIN',
         field: 'abilities.cha',
+        layer: 'core',
       }),
     )
   })
 
   it('rejette un score au-dessus du maximum', () => {
     const scores: AbilityScores = { ...validScores, str: 20 }
-    const issues = validateAbilityGeneration(scores, profile)
+    const issues = validateAbilityGeneration(scores, base35)
     expect(issues).toContainEqual(
       expect.objectContaining({
         code: 'ABILITY_SCORE_ABOVE_MAX',
         field: 'abilities.str',
+        layer: 'core',
       }),
     )
   })
 
-  it('marque les problèmes comme layer "campaign" quand le profil porte un campaignId', () => {
-    const campaignProfile: AbilityScoreGenerationProfile = {
-      ...profile,
-      campaignId: 'table-du-vendredi',
-    }
+  it('rejette un score sous le minimum de example-strict (6) même si valide pour base-3.5', () => {
+    const scores: AbilityScores = { str: 6, dex: 6, con: 6, int: 6, wis: 6, cha: 6 }
+    expect(validateAbilityGeneration(scores, base35)).toEqual([])
+
+    const issues = validateAbilityGeneration({ ...scores, cha: 5 }, exampleStrict)
+    expect(issues).toContainEqual(
+      expect.objectContaining({
+        code: 'ABILITY_SCORE_BELOW_MIN',
+        field: 'abilities.cha',
+        layer: 'campaign',
+        campaignId: 'example-strict',
+      }),
+    )
+  })
+
+  it('marque les problèmes comme layer "campaign" avec campaignId quand le profil n\'est pas base-3.5', () => {
     const scores: AbilityScores = { ...validScores, cha: 10 }
-    const issues = validateAbilityGeneration(scores, campaignProfile)
+    const issues = validateAbilityGeneration(scores, exampleStrict)
     expect(issues).toContainEqual(
       expect.objectContaining({
         code: 'ABILITY_MOD_SUM',
         layer: 'campaign',
-        campaignId: 'table-du-vendredi',
+        campaignId: 'example-strict',
       }),
     )
   })

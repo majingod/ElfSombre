@@ -1,9 +1,5 @@
-import type {
-  AbilityName,
-  AbilityScoreGenerationProfile,
-  AbilityScores,
-  ValidationIssue,
-} from './types'
+import type { CampaignProfile } from '../campaign/types'
+import type { AbilityName, AbilityScores, ValidationIssue } from './types'
 
 const ABILITY_ORDER: AbilityName[] = ['str', 'dex', 'con', 'int', 'wis', 'cha']
 
@@ -13,43 +9,45 @@ export function abilityModifier(score: number): number {
 
 export function validateAbilityGeneration(
   scores: AbilityScores,
-  profile: AbilityScoreGenerationProfile,
+  profile: CampaignProfile,
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = []
-  const layer: ValidationIssue['layer'] = profile.campaignId ? 'campaign' : 'core'
+  const { abilityGeneration } = profile
+  const layer: ValidationIssue['layer'] = profile.id === 'base-3.5' ? 'core' : 'campaign'
+  const campaignId = layer === 'campaign' ? profile.id : undefined
 
   for (const ability of ABILITY_ORDER) {
     const score = scores[ability]
 
-    if (profile.min !== undefined && score < profile.min) {
+    if (score < abilityGeneration.min) {
       issues.push({
         layer,
         severity: 'error',
         code: 'ABILITY_SCORE_BELOW_MIN',
         field: `abilities.${ability}`,
-        message: `${ability} vaut ${score}, ce qui est inférieur au minimum autorisé (${profile.min}).`,
-        campaignId: profile.campaignId,
+        message: `${ability} vaut ${score}, ce qui est inférieur au minimum autorisé (${abilityGeneration.min}).`,
+        campaignId,
       })
     }
 
-    if (profile.max !== undefined && score > profile.max) {
+    if (score > abilityGeneration.max) {
       issues.push({
         layer,
         severity: 'error',
         code: 'ABILITY_SCORE_ABOVE_MAX',
         field: `abilities.${ability}`,
-        message: `${ability} vaut ${score}, ce qui dépasse le maximum autorisé (${profile.max}).`,
-        campaignId: profile.campaignId,
+        message: `${ability} vaut ${score}, ce qui dépasse le maximum autorisé (${abilityGeneration.max}).`,
+        campaignId,
       })
     }
   }
 
-  if (profile.modifierSum) {
+  if (abilityGeneration.modifierSum) {
     const sum = ABILITY_ORDER.reduce(
       (total, ability) => total + abilityModifier(scores[ability]),
       0,
     )
-    const { op, value } = profile.modifierSum
+    const { op, value } = abilityGeneration.modifierSum
     const isValid = op === 'eq' ? sum === value : sum <= value
 
     if (!isValid) {
@@ -62,23 +60,23 @@ export function validateAbilityGeneration(
           op === 'eq'
             ? `La somme des modificateurs (${sum}) doit être exactement ${value}.`
             : `La somme des modificateurs (${sum}) doit être inférieure ou égale à ${value}.`,
-        campaignId: profile.campaignId,
+        campaignId,
       })
     }
   }
 
-  if (profile.parity) {
+  if (abilityGeneration.parity) {
     const oddCount = ABILITY_ORDER.filter((ability) => scores[ability] % 2 !== 0).length
     const evenCount = ABILITY_ORDER.length - oddCount
 
-    if (oddCount !== profile.parity.odd || evenCount !== profile.parity.even) {
+    if (oddCount !== abilityGeneration.parity.odd || evenCount !== abilityGeneration.parity.even) {
       issues.push({
         layer,
         severity: 'error',
         code: 'ABILITY_PARITY',
         field: 'abilities',
-        message: `La répartition pair/impair (${evenCount} pairs, ${oddCount} impairs) ne correspond pas à celle attendue (${profile.parity.even} pairs, ${profile.parity.odd} impairs).`,
-        campaignId: profile.campaignId,
+        message: `La répartition pair/impair (${evenCount} pairs, ${oddCount} impairs) ne correspond pas à celle attendue (${abilityGeneration.parity.even} pairs, ${abilityGeneration.parity.odd} impairs).`,
+        campaignId,
       })
     }
   }
