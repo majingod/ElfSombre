@@ -1,4 +1,4 @@
-# Grimoire 3.5
+# Grimoire 3.5.1
 
 PWA compagnon de joueur pour D&D **édition 3.5** — fiche de personnage à
 calculs automatiques, créateur pas-à-pas, compendium hors-ligne.
