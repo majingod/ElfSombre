@@ -117,3 +117,44 @@
 - Étoffer le compendium (dons, sorts, objets) et faire converger
   `src/data/compendium.ts` avec ces nouveaux types spécifiques.
 - Fiche de personnage (calculs automatiques) et créateur pas-à-pas.
+
+## 2026-08-06 — Moteur de combat/PV/CA/compétences (couche 0)
+
+**Fait**
+- `src/engine/combat.ts` : `computeBAB(progression, level)` — séquence
+  d'attaques (attaque itérative tous les 5 points de BAB au-dessus de 0,
+  jamais sous BAB 6) ; `computeSaveBonus(progression, level)` — 'good' =
+  `floor(level/2)+2`, 'poor' = `floor(level/3)`. Réutilise les types
+  `BabProgression`/`SaveProgression` déjà définis dans `src/data/types.ts`
+  plutôt que de les redéfinir dans le moteur.
+- `src/engine/hitPoints.ts` : `computeMaxHP(hitDie, level, conMod, method,
+  options)` — 1er niveau toujours `hitDie + conMod` ; niveaux suivants
+  selon `method` ('average' | 'max' | 'roll' | 'manual'), `rng` et
+  `manualRolls` injectables ; jamais moins de 1 PV par niveau.
+- `src/engine/armorClass.ts` : `computeAC(params)` — somme des bonus de CA
+  avec bonus de Dextérité plafonné par `maxDexBonus`.
+- `src/engine/skills.ts` : `computeSkillModifier(params)` — rangs +
+  modificateur + synergie + divers − pénalité d'armure (si applicable) ;
+  `computeMaxRanks(level, isClassSkill)` — `level+3` en classe,
+  `(level+3)/2` hors-classe (peut être un demi-rang).
+- Tests Vitest exhaustifs pour les 4 modules (58 tests au total dans le
+  dépôt, tous verts), verrouillant les valeurs imposées par la tâche
+  (BAB full 20, half 6/16, jets Guerrier niveau 6, PV average/max/manual/
+  roll, CA avec Dex plafonnée, rangs max classe/hors-classe).
+
+**Décisions prises**
+- `armorCheckPenalty` est une magnitude positive (ex. 3 pour une pénalité
+  de −3) soustraite au modificateur total quand `affectedByArmorCheck`
+  est vrai — convention choisie faute de précédent dans le dépôt.
+- La règle « jamais moins de 1 PV par niveau » s'applique aussi au 1er
+  niveau (pas seulement aux niveaux suivants), pour rester cohérente avec
+  un `conMod` très négatif sur un petit dé de vie.
+- `computeMaxHP` reste pure : la méthode 'roll' ne lance jamais de dé
+  elle-même sans qu'un `rng` soit fourni ou implicite (`Math.random` par
+  défaut, toujours injectable) — aucune des 4 méthodes n'est favorisée
+  dans l'implémentation.
+
+**Prochaine étape**
+- Brancher ces fonctions de moteur sur `useCharacterCalculations` côté UI
+  (jalon fiche de personnage).
+- Étoffer le compendium (dons, sorts, objets).
