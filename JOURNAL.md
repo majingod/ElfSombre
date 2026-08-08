@@ -158,3 +158,62 @@
 - Brancher ces fonctions de moteur sur `useCharacterCalculations` côté UI
   (jalon fiche de personnage).
 - Étoffer le compendium (dons, sorts, objets).
+
+## 2026-08-08 — Jalon 4.1 : squelette du créateur de personnage (Race + Classe)
+
+**Fait**
+- `src/db/schema.ts` : nouvelle interface `CharacterDraft` (id,
+  schemaVersion, campaignId nullable, `currentStep: 'race' | 'class'`,
+  raceId/classId nullables, level, createdAt/updatedAt) et store Dexie
+  `characterDrafts: 'id, updatedAt'` ajouté en `version(2)` — pure addition
+  de store, aucune transformation des enregistrements existants, donc pas
+  d'`upgrade()`.
+- `src/db/characterDrafts.ts` : `createDraft()` (factory pure, `level: 1`,
+  `campaignId: null`, `currentStep: 'race'`), `saveDraft(draft)` (upsert
+  avec `updatedAt` rafraîchi), `getDraft(id)`, `listDrafts()` (triés par
+  `updatedAt` décroissant), `deleteDraft(id)`. Tests Vitest : cycle
+  create → save → get, suppression, tri de `listDrafts()`.
+- `src/creator/CharacterCreator.tsx` : wizard générique piloté par un
+  tableau `STEPS = ['race', 'class']` — ajouter une étape future (jalon
+  4.2+) n'impose pas de réécrire la navigation. Indicateur "Étape N/2 —
+  Nom", boutons Précédent/Suivant, autosave Dexie (`saveDraft`) à chaque
+  sélection et à chaque changement d'étape. Sur l'étape Classe, une fois
+  `classId` renseigné : bouton Suivant désactivé + message "Étape
+  Caractéristiques — bientôt disponible" (l'étape elle-même n'est pas
+  construite, conformément au scope de la tâche).
+- `src/creator/steps/RaceStep.tsx` / `ClassStep.tsx` : listent les
+  races/classes via `loadRaces()`/`loadClasses()` (compendium déjà importé
+  au jalon 3), résumé court (ajustements de caractéristiques, vision,
+  traits pour les races ; progression BAB et type de lanceur de sorts pour
+  les classes), sélection simple qui écrit `raceId`/`classId` dans le
+  brouillon.
+- `src/App.tsx` : écran d'accueil remplacé par titre "Grimoire 3.5",
+  statut PWA/SW conservé, bouton "Créer un personnage" (crée + persiste un
+  nouveau brouillon puis ouvre le créateur), et "Reprendre la création en
+  cours" affiché uniquement si `listDrafts()` renvoie au moins un
+  brouillon (charge le plus récent).
+- Tests Vitest (`CharacterCreator.test.tsx`, `App.test.tsx`) avec
+  Testing Library, `fetch` mocké sur les fixtures JSON du compendium comme
+  dans `loadCompendium.test.ts`, et `fake-indexeddb` déjà en place pour
+  Dexie.
+
+**Décisions prises**
+- `createDraft()` reste une fonction pure (pas d'écriture Dexie) ; c'est
+  `saveDraft()` qui persiste — permet de tester la factory sans I/O et
+  suit l'ordre `create → save → get` demandé par la tâche.
+- Le résumé des traits raciaux/classes est généré à la volée depuis les
+  champs déjà présents dans `RaceDefinition`/`ClassDefinition` (pas de
+  nouvelle table de libellés français pour les clés de traits) : suffisant
+  pour un résumé court, une localisation complète pourra venir plus tard
+  si besoin.
+- Portée strictement limitée aux étapes Race et Classe : pas de champ pour
+  Caractéristiques/Compétences/Dons/Équipement dans `CharacterDraft`, pas
+  de sélection de profil de campagne, pas de navigation applicative
+  au-delà du flux Accueil → Créateur.
+
+**Prochaine étape**
+- Jalon 4.2 : étape Caractéristiques (génération selon le profil de
+  campagne, `campaignId` du brouillon devient réellement utile) et
+  sélection du profil de campagne.
+- Étapes Compétences, Dons, Équipement dans des tâches suivantes du
+  jalon 4.
